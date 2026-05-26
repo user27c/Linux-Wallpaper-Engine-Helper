@@ -29,6 +29,7 @@ func onTrayReady() {
 	mRandom := systray.AddMenuItem("随机壁纸", "应用随机壁纸")
 	mMute := systray.AddMenuItem("一键静音", "静音/取消静音")
 	mStop := systray.AddMenuItem("关闭动态壁纸", "停止当前壁纸引擎")
+	mRestart := systray.AddMenuItem("一键重启底层修复", "杀死卡死的壁纸引擎并重新应用当前壁纸")
 	systray.AddSeparator()
 	mQuit := systray.AddMenuItem("退出", "退出应用")
 
@@ -62,6 +63,12 @@ func onTrayReady() {
 				} else {
 					log.Println("Wallpaper engine stopped")
 				}
+			case <-mRestart.ClickedCh:
+				log.Println("Restarting wallpaper engine to fix issues from tray...")
+				if err := tryKillProcesses("linux-wallpaperengine"); err != nil {
+					log.Printf("Error stopping wallpaper engine: %v", err)
+				}
+				go restoreWallpaper()
 			case <-mQuit.ClickedCh:
 				glib.IdleAdd(func() {
 					quitApp()
