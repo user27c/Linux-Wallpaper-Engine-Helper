@@ -29,6 +29,8 @@ var SelectedWallpaperItemId string = ""
 var StatusText *gtk.Label = nil
 var WallpaperPropertiesBox *gtk.FlowBox = nil
 var WallpaperList *gtk.FlowBox = nil
+var VolumeLabel *gtk.Label = nil
+var VolumeSlider *gtk.Scale = nil
 
 // Main function to create the GTK application and set up the main window.
 func activate(app *gtk.Application) {
@@ -168,23 +170,24 @@ func activate(app *gtk.Application) {
 	volumeContainer.SetHExpand(true)
 	volumeContainer.SetHAlign(gtk.AlignStart)
 	volumeContainer.SetVAlign(gtk.AlignCenter)
-	volumeLabel := gtk.NewLabel("音量: " + strconv.FormatInt(Config.SavedUIState.Volume, 10) + "%")
-	volumeLabel.SetHAlign(gtk.AlignCenter)
-	volumeLabel.SetVAlign(gtk.AlignCenter)
-	volumeSlider := gtk.NewScaleWithRange(gtk.OrientationHorizontal, 0, 100, 1)
-	volumeSlider.SetValue(float64(Config.SavedUIState.Volume))
-	volumeSlider.SetHExpand(true)
-	volumeSlider.SetVExpand(false)
-	volumeSlider.SetHAlign(gtk.AlignCenter)
-	volumeSlider.SetVAlign(gtk.AlignCenter)
-	volumeSlider.SetSizeRequest(200, -1)
-	volumeSlider.Connect("value-changed", func(slider *gtk.Scale) {
+	VolumeLabel = gtk.NewLabel("音量: " + strconv.FormatInt(Config.SavedUIState.Volume, 10) + "%")
+	VolumeLabel.SetHAlign(gtk.AlignCenter)
+	VolumeLabel.SetVAlign(gtk.AlignCenter)
+	VolumeSlider = gtk.NewScaleWithRange(gtk.OrientationHorizontal, 0, 100, 1)
+	VolumeSlider.SetValue(float64(Config.SavedUIState.Volume))
+	VolumeSlider.SetHExpand(true)
+	VolumeSlider.SetVExpand(false)
+	VolumeSlider.SetHAlign(gtk.AlignCenter)
+	VolumeSlider.SetVAlign(gtk.AlignCenter)
+	VolumeSlider.SetSizeRequest(200, -1)
+	VolumeSlider.Connect("value-changed", func(slider *gtk.Scale) {
 		value := slider.Value()
-		volumeLabel.SetLabel("音量: " + strconv.FormatFloat(value, 'f', 0, 64) + "%")
+		VolumeLabel.SetLabel("音量: " + strconv.FormatFloat(value, 'f', 0, 64) + "%")
 		Config.SavedUIState.Volume = int64(value)
+		setPipeWireVolume(int64(value))
 	})
-	volumeContainer.Append(volumeLabel)
-	volumeContainer.Append(volumeSlider)
+	volumeContainer.Append(VolumeLabel)
+	volumeContainer.Append(VolumeSlider)
 	bottomControlBar.Append(volumeContainer)
 
 	//ANCHOR - Wallpaper list
@@ -964,4 +967,15 @@ func attachGestures(imageWidget *gtk.Overlay, wallpaperItem *WallpaperItem, isFa
 	imageWidget.AddController(leftClickGesture)
 
 	log.Println("Context menu attached to image widget for wallpaper:", wallpaperItem.WallpaperID)
+}
+
+func updateVolumeUI(volume int64) {
+	glib.IdleAdd(func() {
+		if VolumeSlider != nil {
+			VolumeSlider.SetValue(float64(volume))
+		}
+		if VolumeLabel != nil {
+			VolumeLabel.SetLabel("音量: " + strconv.FormatInt(volume, 10) + "%")
+		}
+	})
 }

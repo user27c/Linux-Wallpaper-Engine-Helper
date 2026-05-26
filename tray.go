@@ -46,9 +46,14 @@ func onTrayReady() {
 					previousVolume = Config.SavedUIState.Volume
 					Config.SavedUIState.Volume = 0
 					mMute.SetTitle("取消静音")
+					setPipeWireMute(true)
+					updateVolumeUI(0)
 				} else {
 					Config.SavedUIState.Volume = previousVolume
 					mMute.SetTitle("一键静音")
+					setPipeWireMute(false)
+					setPipeWireVolume(previousVolume)
+					updateVolumeUI(previousVolume)
 				}
 			case <-mStop.ClickedCh:
 				log.Println("Stopping wallpaper engine from tray...")
@@ -82,6 +87,10 @@ func showMainWindow() {
 func quitApp() {
 	appQuitting = true
 	saveConfig()
+	log.Println("Stopping wallpaper engine on helper exit...")
+	if err := tryKillProcesses("linux-wallpaperengine"); err != nil {
+		log.Printf("Error stopping wallpaper engine on exit: %v", err)
+	}
 	if MainWindow != nil {
 		app := MainWindow.Application()
 		if app != nil {
